@@ -1,36 +1,25 @@
-mod r#async;
-mod sync;
+mod bot;
+mod error;
+pub mod responses;
 
-/// Модуль с синхронным API клиента Max Messenger Bot.
-/// Доступен при включённой фиче `"sync"`.
-#[cfg(feature = "sync")]
-pub mod sync_api {
-    pub use crate::sync::client::Client;
-    pub use crate::sync::error::ClientError;
-    pub mod responses {
-        pub use crate::sync::responses::*;
-    }
-}
-
-/// Модуль с асинхронным API клиента Max Messenger Bot.
-/// Доступен при включённой фиче `"async"`.
-#[cfg(feature = "async")]
-pub mod async_api {}
+pub use crate::bot::Bot;
+pub use crate::error::ClientError;
 
 #[cfg(test)]
 mod tests {
+    use crate::ClientError;
     use once_cell::sync::Lazy;
 
-    static TOKEN: Lazy<String> = Lazy::new(|| {
-        std::env::var("MAX_BOT_API_ACCESS_TOKEN").expect("MAX_BOT_API_ACCESS_TOKEN not set")
-    });
+    static TOKEN: Lazy<String> =
+        Lazy::new(|| std::env::var("MAX_BOT_TOKEN").expect("MAX_BOT_TOKEN not set"));
 
-    #[test]
-    fn get_me() {
-        use crate::sync_api::Client;
+    #[tokio::test]
+    async fn get_me() -> Result<(), ClientError> {
+        use crate::Bot;
 
-        let client = Client::new(TOKEN.to_string());
+        let client = Bot::new(TOKEN.to_string());
 
-        client.get_me().unwrap();
+        client.get_me().await?;
+        Ok(())
     }
 }

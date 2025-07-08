@@ -7,18 +7,12 @@ license = "MPL-2.0"
 [lib]
 path = "src/lib.rs"
 
-[features]
-default = ["async"]
-async = ["reqwest", "tokio"]
-sync = ["ureq"]
-
 [dependencies]
-reqwest = { version = "0.12.22", optional = true }
+reqwest = { version = "0.12.22" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 thiserror = "2.0.12"
-tokio = { version = "1.46.0", optional = true }
-ureq = { version = "3.0.12", optional = true, features = ["json"] }
+tokio = { version = "1.46.0", features = ["rt", "macros"] }
 
 [dev-dependencies]
 once_cell = "1.21.3"

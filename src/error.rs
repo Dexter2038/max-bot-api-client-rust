@@ -6,7 +6,7 @@ use thiserror::Error;
 pub enum ClientError {
     /// Ошибка HTTP-транспорта (сетевая ошибка, таймаут, DNS и т.п.).
     #[error("HTTP error: {0}")]
-    HttpError(#[from] ureq::Error),
+    HttpError(#[from] reqwest::Error),
 
     /// Ошибка ввода-вывода (например, при чтении тела ответа).
     #[error("I/O error: {0}")]

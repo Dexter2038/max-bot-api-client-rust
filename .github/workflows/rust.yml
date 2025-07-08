@@ -16,8 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cargo build --verbose --features=sync
+        run: cargo build --verbose
       - name: Run tests
         env:
-          MAX_BOT_API_ACCESS_TOKEN: ${{ secrets.MAX_BOT_API_ACCESS_TOKEN }}
-        run: cargo test --verbose --features=sync
+          MAX_BOT_TOKEN: ${{ secrets.MAX_BOT_TOKEN }}
+        run: cargo test --verbose

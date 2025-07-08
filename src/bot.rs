@@ -1,17 +1,17 @@
-use ureq::Agent;
+use reqwest::Client;
 
-use crate::sync::{error::ClientError, responses::GetMeResponse};
+use crate::{error::ClientError, responses::GetMeResponse};
 
 /// Клиент для работы с Max Messenger Bot API.
 /// Позволяет выполнять синхронные запросы к API с использованием HTTP агента `ureq`.
-pub struct Client {
-    agent: Agent,
+pub struct Bot {
+    client: Client,
     base_url: String,
     access_token: String,
 }
 
-impl Client {
-    /// Создаёт новый клиент с указанным токеном доступа и базовым URL по умолчанию.
+impl Bot {
+    /// Создаёт новую сессию бота с указанным токеном доступа и базовым URL по умолчанию.
     ///
     /// # Аргументы
     ///
@@ -20,21 +20,21 @@ impl Client {
     /// # Пример
     ///
     /// ```
-    /// let client = Client::new("your_access_token");
+    /// let bot = Bot::new("your_access_token");
     /// ```
     pub fn new(access_token: impl Into<String>) -> Self {
-        let cfg = Agent::config_builder()
-            .http_status_as_error(false)
-            .https_only(true)
-            .build();
+        let client = match Client::builder().https_only(true).build() {
+            Ok(client) => client,
+            Err(_) => Client::new(),
+        };
         Self {
-            agent: Agent::new_with_config(cfg),
+            client,
             base_url: "https://botapi.max.ru".into(),
             access_token: access_token.into(),
         }
     }
 
-    /// Создаёт новый клиент с указанным токеном доступа и произвольным базовым URL.
+    /// Создаёт новую сессию бота с указанным токеном доступа и произвольным базовым URL.
     ///
     /// Используется для тестирования или работы с альтернативными серверами API.
     ///
@@ -46,12 +46,15 @@ impl Client {
     /// # Пример
     ///
     /// ```
-    /// let client = Client::with_base_url("your_access_token", "https://custom.api.url");
+    /// let bot = Bot::with_base_url("your_access_token", "https://custom.api.url");
     /// ```
     pub fn with_base_url(access_token: impl Into<String>, base_url: impl Into<String>) -> Self {
-        let cfg = Agent::config_builder().https_only(true).build();
+        let client = match Client::builder().https_only(true).build() {
+            Ok(client) => client,
+            Err(_) => Client::new(),
+        };
         Self {
-            agent: Agent::new_with_config(cfg),
+            client,
             base_url: base_url.into(),
             access_token: access_token.into(),
         }
@@ -68,18 +71,18 @@ impl Client {
     /// # Пример
     ///
     /// ```
-    /// let bot_info = client.get_me()?;
+    /// let bot_info = bot.get_me()?;
     /// println!("Bot ID: {}", bot_info.user_id);
     /// ```
-    pub fn get_me(&self) -> Result<GetMeResponse, ClientError> {
+    pub async fn get_me(&self) -> Result<GetMeResponse, ClientError> {
         let url = format!("{}/me?access_token={}", self.base_url, self.access_token);
-        let response = self.agent.get(&url).call()?;
+        let response = self.client.get(&url).send().await?;
 
         if !response.status().is_success() {
             return Err(ClientError::StatusError(response.status().as_u16()));
         }
 
-        let body = response.into_body().read_to_string()?;
+        let body = response.text().await?;
 
         let result = serde_json::from_str::<GetMeResponse>(&body)?;
 
